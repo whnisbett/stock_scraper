@@ -6,14 +6,15 @@ from bs4 import BeautifulSoup
 
 def getCurrentPPS(soup):
     price_div = soup.find('h3', class_ = 'intraday__price')
-    curr_price = price_div.find('bg-quote',class_='value').contents[0]
+    curr_price = price_div.find('bg-quote').contents[0]
     curr_price = float(curr_price.replace(',',''))
     return curr_price
 
 def getPercentChange(soup):
-    close_div = soup.find_all('div', class_='intraday__close')[0]
-    per_change = close_div.find_all('td',class_='table__cell not-fixed positive')[1].contents[0][:-1]
-    per_change = float(per_change.replace(',',''))/100
+    intraday_div = soup.find('div',class_='intraday__data')
+    per_change_span = intraday_div.find('span', class_= 'change--percent--q')
+    per_change = per_change_span.find('bg-quote').contents[0]
+    per_change = float(per_change[:-1])/100
     return per_change
 
 def getSector(soup):
@@ -69,13 +70,16 @@ def getStockAttributes(ticker):
         primary_attributes = getPrimaryAttributes(soup)
         attributes['52 Week Low'] = float(primary_attributes['52 Week Range'].split(' - ')[0].replace(',',''))
         attributes['52 Week High'] = float(primary_attributes['52 Week Range'].split(' - ')[1].replace(',',''))
-        attributes['P/E Ratio'] = float(primary_attributes['P/E Ratio'].replace(',',''))
+        try:
+            attributes['P/E Ratio'] = float(primary_attributes['P/E Ratio'].replace(',',''))
+        except:
+            attributes['P/E Ratio'] = '-'
         attributes['EPS'] = float(primary_attributes['EPS'].replace('$',''))
-        attributes['Market Cap'] = float(primary_attributes['Market Cap'][1:].replace(',',''))
+        attributes['Market Cap'] = primary_attributes['Market Cap'][1:].replace(',','')
         attributes['% of Float Shorted'] = float(primary_attributes['% of Float Shorted'].replace('%',''))/100
         return attributes
 
-wb_path = '/Users/billy/Personal/Finances/Stocks.xlsx'
+wb_path = '/Users/billy/Personal/Finances/Financials.xlsx'
 wb = xl.load_workbook(wb_path)
 sheet = wb['Stocks']
 ticker_col = 1
