@@ -16,13 +16,16 @@ def getPercentChange(soup):
     intraday_div = soup.find('div', class_ = 'intraday__data')
     per_change_span = intraday_div.find('span', class_ = 'change--percent--q')
     per_change = per_change_span.find('bg-quote')
-    if per_change.attrs['session'] != 'after':
+    try:
+        if per_change.attrs['session'] == 'after':
+            close_div = soup.find('div', class_ = 'intraday__close')
+            per_change = close_div.find_all('td')[2].contents[0]
+        else:
+            per_change = per_change.contents[0]
+    except KeyError:
         per_change = per_change.contents[0]
-    else:
-        close_div = soup.find('div', class_ = 'intraday__close')
-        per_change = close_div.find_all('td')[2].contents[0]
-    per_change = float(per_change.replace(',', '')[:-1]) / 100
 
+    per_change = float(per_change.replace(',', '')[:-1]) / 100
     return per_change
 
 
@@ -35,7 +38,7 @@ def getSector(soup):
 def getSectorChange(soup):
     sector_div = soup.find('div', class_ = 'intraday__sector')
     sector_change_div = sector_div.find('span', class_ = 'change--percent positive')
-    if len(sector_change_div) == 0:
+    if sector_change_div == None:
         sector_change_div = sector_div.find('span', class_ = 'change--percent negative')
     sector_change = sector_change_div.find('span').contents[0][:-1]
     sector_change = float(sector_change.replace(',', '')) / 100
@@ -117,12 +120,12 @@ attributes_cell_keys = {'Current PPS': 'E',
 
 for r in range(first_ticker, last_ticker + 1):
     ticker = sheet.cell(row = r, column = ticker_col).value
-    print(ticker)
 
     try:
         attributes = getStockAttributes(ticker)
     except AttributeError:
         break
+    print(ticker)
     for key in attributes.keys():
         value = attributes[key]
         column = attributes_cell_keys[key]
